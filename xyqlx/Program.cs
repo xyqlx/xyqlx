@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace xyqlx
 {
@@ -11,15 +8,26 @@ namespace xyqlx
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("收到" + args.Length + "条命令");
-            foreach(string i in args) {
-                Console.WriteLine(i);
+            Dictionary<string, string> argsDict = new Dictionary<string, string>();
+            string lastArg = "";
+            //这里没有考虑args可能出现的其它情形，甚至可能报错（
+            if (args.Length == 0) return;
+            argsDict.Add(args[0].Substring(1, 2), args[0].Substring(3));
+            foreach (string i in args)
+            {
+                if (i[0] == '-')
+                {
+                    argsDict.Add(i.Substring(1), "");
+                    lastArg = i.Substring(1);
+                }
+                else
+                    argsDict[lastArg] = i;
             }
-            String path = @"C:\code\cpp\test\test.txt";
-            //FileStream fileStream = new FileStream(path, FileMode.OpenOrCreate);
-            StreamWriter streamWriter = new StreamWriter(path, true);
-            streamWriter.WriteLine("That sounds good.");
-            streamWriter.Close();
+            Console.WriteLine(CppGenerator.Generate(argsDict));
+            //String path = @"C:\code\cpp\test\test.txt";
+            //StreamWriter streamWriter = new StreamWriter(path, true);
+            //streamWriter.WriteLine("That sounds good.");
+            //streamWriter.Close();
             Console.ReadKey();
         }
     }
