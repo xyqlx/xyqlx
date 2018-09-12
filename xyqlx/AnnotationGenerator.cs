@@ -9,16 +9,16 @@ namespace xyqlx
     static class AnnotationGenerator
     {
         public static string Generate(Dictionary<string,string> argsDict) {
-            string res = "/**\n";
-            res += " *Filename: cp" + argsDict["cp"] + "002" + "\n";
-            res += " *Category: " + argsDict["ct"] + "\n";
-            res += " *Description: " + argsDict["dc"] + "\n";
-            res += " *Author: " + "xyqlx" + "(mxxyqlx@qq.com)" + "\n";
-            res += " *Date: " + DateTime.Now.ToString() + "\n";
-            res += " *Principle: " + argsDict["rp"] + "\n";
-            res += " *Addition: " + argsDict["ad"] + "\n";
-            res += " *Source: " + argsDict["sc"] + "\n";
-            res += " */\n";
+            string res = "/**-----------------------------------------\n";
+            res += "--Filename    : cp" + argsDict["cp"] + "002" + "\n";
+            res += "--Category    : " + argsDict["c"] + "\n";
+            res += "--Description : " + argsDict["d"] + "\n";
+            res += "--Author      : " + "xyqlx" + "(mxxyqlx@qq.com)" + "\n";
+            res += "--Date        : " + DateTime.Now.ToString() + "\n";
+            res += "--Principle   : " + argsDict["p"] + "\n";
+            res += "--Addition    : " + argsDict["a"] + "\n";
+            res += "--Source      : " + argsDict["s"] + "\n";
+            res += "-------------------------------------------*/\n";
             return res;
         }
     }
