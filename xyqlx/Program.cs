@@ -23,7 +23,7 @@ namespace xyqlx
                 else
                     argsDict[lastArg] = i;
             }
-            Console.WriteLine(CppGenerator.Generate(argsDict));
+            //Console.WriteLine(CppGenerator.Generate(argsDict));
             //String path = @"C:\code\cpp\test\test.txt";
             //StreamWriter streamWriter = new StreamWriter(path, true);
             //streamWriter.WriteLine("That sounds good.");

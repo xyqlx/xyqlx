@@ -8,6 +8,14 @@ namespace xyqlx
 {
     static class CppGenerator
     {
+        //还是改成数据成员吧。。。没法扩展了
+        public static string FilePos(Dictionary<string,string> argsDict)
+        {
+            if (argsDict["cp"] == "t")
+                return "C:\\code\\cpp\\test\\cpt001.cpp";
+            else
+                return "C:\\code\\cpp\\test\\cpt001.cpp";
+        }
         public static string Generate(Dictionary<string,string> argsDict)
         {
             string[] headList = argsDict["i"].Split(';');

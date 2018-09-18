@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AnnotationGenerator.cs" />
+    <Compile Include="FileCreator.cs" />
     <Compile Include="CppGenerator.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
