@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xyqlx", "xyqlx\xyqlx.csproj", "{AAB125D2-4F0C-4F7E-AACE-CE27EA4AF4DC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{73D513DB-E47B-41C7-A9E3-C7B515AEFB24}"
+	ProjectSection(SolutionItems) = preProject
+		xyqlx\CCodeType.cs = xyqlx\CCodeType.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
