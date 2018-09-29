@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Collections;
 using System.Xml;
+using System.IO;
 
 namespace xyqlx
 {
@@ -15,6 +16,7 @@ namespace xyqlx
         private string typeName;
         private string callCommand;
         private string createPath;
+        private string suffix;
         private class CAnno
         {
             private string firstLine;
@@ -59,12 +61,13 @@ namespace xyqlx
         private string context;
         private string openStyle;
 
-        public CCodeType(string typeName)
+        public CCodeType(string typeCommand)
         {
+            CallCommand = typeCommand;
             XmlDocument doc = new XmlDocument();
             doc.Load("C:\\xy\\xyqlx.xml");
             XmlElement root = doc.DocumentElement;
-            XmlNode node = root.SelectSingleNode("/xyqlx/languages/language/types/type[/call/text()='" + typeName + "']");
+            XmlNode node = root.SelectSingleNode("/xyqlx/languages/language/types/type[call/text()='"+callCommand+"']");
             if(node == null)
             {
                 succeed = false;
@@ -72,18 +75,58 @@ namespace xyqlx
             }
             succeed = true;
             XmlNode langNode = node.ParentNode.ParentNode;
+            typeName = node.SelectSingleNode(".//name/text()").Value;
             SetAnnotation(node.SelectSingleNode(".//annotation/firstLine/text()").Value,
                 node.SelectSingleNode(".//annotation/beforeLine/text()").Value,
                 node.SelectSingleNode(".//annotation/lastLine/text()").Value);
-            CallCommand = typeName;
             context = node.SelectSingleNode(".//context/text/text()").Value;
             createPath = node.SelectSingleNode(".//path/text()").Value;
             SetImport(node.SelectSingleNode(".//import/beforeInclude/text()").Value,
                 node.SelectSingleNode(".//import/afterInclude/text()").Value);
             language = langNode.SelectSingleNode(".//name/text()").Value;
             openStyle = node.SelectSingleNode(".//openStyle/text()").Value;
+            suffix = langNode.SelectSingleNode(".//suffix/text()").Value;
         }
-
+        public void createCodeFile(Dictionary<string,string> argsDict)
+        {
+            string defaultPath = "C:\\code\\"+Language+"\\"+typeName;
+            string orderStrVer = "011";
+            if (false == System.IO.Directory.Exists(defaultPath))
+            {
+                System.IO.Directory.CreateDirectory(defaultPath);
+            }
+            if (CreatePath.IndexOf("%FOLDER%") != -1)
+            {
+                defaultPath += "\\" + callCommand + orderStrVer;
+                System.IO.Directory.CreateDirectory(defaultPath);
+            }
+            if (CreatePath == "%FILE%")
+            {
+                string codeFilePath = defaultPath + "\\" + callCommand + orderStrVer + "." + suffix;
+                File.Create(codeFilePath);
+                StreamWriter sw = new StreamWriter(codeFilePath, true);
+                sw.Write(GetFirstLine());
+                sw.Write(GetBeforeLine());
+                sw.WriteLine("Filename : " + CallCommand + orderStrVer + "." + suffix);
+                sw.Write(GetBeforeLine());
+                sw.WriteLine("Category : " + argsDict["c"]);
+                sw.Write(GetBeforeLine());
+                sw.WriteLine("Description : " + argsDict["d"]);
+                sw.Write(GetBeforeLine());
+                sw.WriteLine("Author : " + "暂时先这样。。");
+                sw.Write(GetBeforeLine());
+                sw.WriteLine("Date : " + "同上");
+                sw.Write(GetBeforeLine());
+                sw.WriteLine("Principle: " + argsDict["p"]);
+                sw.Write(GetBeforeLine());
+                sw.WriteLine("Addition : " + argsDict["a"]);
+                sw.Write(GetBeforeLine());
+                sw.WriteLine("Source : " + argsDict["s"]);
+                sw.Write(GetLastLine());
+                //暂时先这样吧。。。
+                sw.Close();
+            }
+        }
         public string Language { get => language; set => language = value; }
         public string TypeName { get => typeName; set => typeName = value; }
         public string CallCommand { get => callCommand; set => callCommand = value; }
@@ -130,5 +173,7 @@ namespace xyqlx
         public string Context { get => context; set => context = value; }
         public string OpenStyle { get => openStyle; set => openStyle = value; }
         public bool Succeed => succeed;
+
+        public string Suffix { get => suffix; set => suffix = value; }
     }
 }
