@@ -29,8 +29,9 @@ namespace xyqlx
             }
             else
             {
-
+                codeType.createCodeFile(argsDict);
             }
+            
             //Console.WriteLine(CppGenerator.Generate(argsDict));
             //String path = @"C:\code\cpp\test\test.txt";
             //StreamWriter streamWriter = new StreamWriter(path, true);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections;
 using System.Xml;
 using System.IO;
+using System.Diagnostics;
 
 namespace xyqlx
 {
@@ -17,6 +18,7 @@ namespace xyqlx
         private string callCommand;
         private string createPath;
         private string suffix;
+        private string author;
         private class CAnno
         {
             private string firstLine;
@@ -67,6 +69,7 @@ namespace xyqlx
             XmlDocument doc = new XmlDocument();
             doc.Load("C:\\xy\\xyqlx.xml");
             XmlElement root = doc.DocumentElement;
+            author = root.SelectSingleNode("/xyqlx/info/author/text()").Value;
             XmlNode node = root.SelectSingleNode("/xyqlx/languages/language/types/type[call/text()='"+callCommand+"']");
             if(node == null)
             {
@@ -89,8 +92,50 @@ namespace xyqlx
         }
         public void createCodeFile(Dictionary<string,string> argsDict)
         {
+            //表示代码在当前类型的顺序
+            int order = 0;
+            //xml对象
+            XmlDocument doc = new XmlDocument();
+            doc.Load("C:\\xy\\code.xml");
+            //xml根
+            XmlElement root = doc.DocumentElement;
+            //xml根节点
+            XmlNode nodeXY = root.SelectSingleNode("/xy");
+            //类型节点
+            XmlNode node = root.SelectSingleNode("/xy/" + language + "/" + TypeName);
+            //是否创建类型节点
+            if (node == null)
+            {
+                //创建已有代码数为0的类型节点
+                XmlNode nodeCntText = doc.CreateTextNode("0");
+                XmlElement nodeCnt = doc.CreateElement("cnt");
+                XmlElement nodeType = doc.CreateElement(TypeName);
+                nodeCnt.AppendChild(nodeCntText);
+                nodeType.AppendChild(nodeCnt);
+                //查找相应父语言节点
+                XmlNode nodeLanguage = root.SelectSingleNode("/xy/" + language);
+                //如果找不到就创建一个
+                if (null == nodeLanguage)
+                {
+                    XmlElement tempNodeLanguage = doc.CreateElement(language);
+                    nodeXY.AppendChild(tempNodeLanguage);
+                    //再次查找，这一步需要保证一定查到
+                    nodeLanguage = root.SelectSingleNode("/xy/" + language);
+                }
+                //类型添加完成，node转向类型节点
+                nodeLanguage.AppendChild(nodeType);
+                node = root.SelectSingleNode("/xy/" + language + "/" + TypeName);
+            }   //顺序等于类型中已有代码数+1
+            else order = int.Parse(node.SelectSingleNode(".//cnt/text()").Value);
+            ++order;
+            //求字符串格式的order
+            string orderStrVer = order.ToString("D3");
+            //设置type的已有节点数
+            node.SelectSingleNode(".//cnt").InnerText = order.ToString();
+            
+            //开始创建代码文件
             string defaultPath = "C:\\code\\"+Language+"\\"+typeName;
-            string orderStrVer = "011";
+            
             if (false == System.IO.Directory.Exists(defaultPath))
             {
                 System.IO.Directory.CreateDirectory(defaultPath);
@@ -100,31 +145,92 @@ namespace xyqlx
                 defaultPath += "\\" + callCommand + orderStrVer;
                 System.IO.Directory.CreateDirectory(defaultPath);
             }
-            if (CreatePath == "%FILE%")
+            if (CreatePath.IndexOf("%FILE%")!=-1)
             {
                 string codeFilePath = defaultPath + "\\" + callCommand + orderStrVer + "." + suffix;
-                File.Create(codeFilePath);
                 StreamWriter sw = new StreamWriter(codeFilePath, true);
                 sw.Write(GetFirstLine());
                 sw.Write(GetBeforeLine());
-                sw.WriteLine("Filename : " + CallCommand + orderStrVer + "." + suffix);
+                sw.WriteLine("Filename    : " + CallCommand + orderStrVer + "." + suffix);
                 sw.Write(GetBeforeLine());
-                sw.WriteLine("Category : " + argsDict["c"]);
+                sw.WriteLine("Category    : " + argsDict["c"]);
                 sw.Write(GetBeforeLine());
                 sw.WriteLine("Description : " + argsDict["d"]);
                 sw.Write(GetBeforeLine());
-                sw.WriteLine("Author : " + "暂时先这样。。");
+                sw.WriteLine("Author      : " + author);
                 sw.Write(GetBeforeLine());
-                sw.WriteLine("Date : " + "同上");
+                sw.WriteLine("Date        : " + DateTime.Now.ToString("yyyy/MM/dd hh:mm:ss"));
                 sw.Write(GetBeforeLine());
-                sw.WriteLine("Principle: " + argsDict["p"]);
+                sw.WriteLine("Principle   : " + argsDict["p"]);
                 sw.Write(GetBeforeLine());
-                sw.WriteLine("Addition : " + argsDict["a"]);
+                sw.WriteLine("Addition    : " + argsDict["a"]);
                 sw.Write(GetBeforeLine());
-                sw.WriteLine("Source : " + argsDict["s"]);
+                sw.WriteLine("Source      : " + argsDict["s"]);
                 sw.Write(GetLastLine());
-                //暂时先这样吧。。。
+
+                string includesString = argsDict["i"];
+                string[] includesStringArray = includesString.Split(';');
+                foreach(string i in includesStringArray)
+                {
+                    sw.WriteLine(GetBeforeInclude() + i + GetAfterInclude());
+                }
+                sw.Write(context);
                 sw.Close();
+                defaultPath = codeFilePath;
+            }
+            //创建code及其节点(放后面是因为可以引用生成时的数据）
+            XmlElement nodeCode = doc.CreateElement("code");
+            XmlElement nodeID = doc.CreateElement("id");
+            nodeID.InnerText = order.ToString();
+            nodeCode.AppendChild(nodeID);
+            XmlElement nodeFileName = doc.CreateElement("filename");
+            nodeFileName.InnerText = callCommand + orderStrVer + "." + suffix;
+            nodeCode.AppendChild(nodeFileName);
+            XmlElement nodePath = doc.CreateElement("path");
+            nodePath.InnerText = defaultPath;
+            nodeCode.AppendChild(nodePath);
+            XmlElement nodeCategory = doc.CreateElement("category");
+            nodeCategory.InnerText = argsDict["c"];
+            nodeCode.AppendChild(nodeCategory);
+            XmlElement nodeDescription = doc.CreateElement("description");
+            nodeDescription.InnerText = argsDict["d"];
+            nodeCode.AppendChild(nodeDescription);
+            XmlElement nodeDate = doc.CreateElement("date");
+            nodeDate.InnerText = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss");
+            nodeCode.AppendChild(nodeDate);
+            XmlElement nodePrinciple = doc.CreateElement("principle");
+            nodePrinciple.InnerText = argsDict["p"];
+            nodeCode.AppendChild(nodePrinciple);
+            XmlElement nodeAddition = doc.CreateElement("addition");
+            nodeAddition.InnerText = argsDict["a"];
+            nodeCode.AppendChild(nodeAddition);
+            XmlElement nodeSource = doc.CreateElement("source");
+            nodeSource.InnerText = argsDict["s"];
+            nodeCode.AppendChild(nodeSource);
+            node.AppendChild(nodeCode);
+            doc.Save("C:\\xy\\code.xml");
+            //打开代码文件
+            if (argsDict.ContainsKey("o"))
+            {
+                string realOpenStyle = openStyle;
+                int l = realOpenStyle.IndexOf("%FILE%");
+                if (l != -1)
+                {
+                    realOpenStyle = realOpenStyle.Replace("%FILE%", "C:\\code\\" + Language + "\\" + typeName + "\\" + callCommand + orderStrVer + "." + suffix);
+                }
+                //realOpenStyle = "notepad";
+                Process myProcess = new Process();
+                myProcess.StartInfo.FileName = "cmd";
+                myProcess.StartInfo.UseShellExecute = false;
+                myProcess.StartInfo.RedirectStandardInput = true;
+                myProcess.StartInfo.RedirectStandardOutput = true;
+                myProcess.StartInfo.RedirectStandardError = true;
+                myProcess.StartInfo.CreateNoWindow = true;
+                myProcess.Start();
+                myProcess.StandardInput.WriteLine(realOpenStyle + "&exit");
+                myProcess.StandardInput.AutoFlush = true;
+                myProcess.WaitForExit();
+                myProcess.Close();
             }
         }
         public string Language { get => language; set => language = value; }
