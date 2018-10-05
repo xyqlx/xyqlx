@@ -37,7 +37,7 @@ namespace xyqlx
             //StreamWriter streamWriter = new StreamWriter(path, true);
             //streamWriter.WriteLine("That sounds good.");
             //streamWriter.Close();
-            Console.ReadKey();
+            //Console.ReadKey();
         }
     }
 }

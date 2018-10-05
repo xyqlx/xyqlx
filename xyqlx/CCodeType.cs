@@ -35,29 +35,67 @@ namespace xyqlx
         {
             private string beforeInclude;
             private string afterInclude;
-            private class CIncludes
+            public class CIncludes
             {
-                private class CInclude
+                public class CInclude
                 {
                     private string call;
                     private string text;
                     private string asText;
                     private string appText;
 
+                    public CInclude(string call,string text,string astext,string apptext)
+                    {
+                        this.call = call;
+                        this.text = text;
+                        this.asText = astext;
+                        this.appText = apptext;
+                    }
+                    
                     public string Call { get => call; set => call = value; }
                     public string Text { get => text; set => text = value; }
                     public string AsText { get => asText; set => asText = value; }
                     public string AppText { get => appText; set => appText = value; }
                 }
-                private List<CInclude> includesContent;
+                public void AddInclude(string callCommand,string text,string asText,string apptext)
+                {
+                    includesContent.Add(callCommand, new CInclude(callCommand, text, asText, apptext));
+                }
+                private Dictionary<string,CInclude> includesContent = new Dictionary<string, CInclude>();
 
-                private List<CInclude> IncludesContent { get => includesContent; set => includesContent = value; }
+                public Dictionary<string,CInclude> IncludesContent { get => includesContent; set => includesContent = value; }
             }
-            private CIncludes includes;
+            private string Head(CIncludes.CInclude include)
+            {
+                if (include.Text == "") return "";
+                else return beforeInclude + include.Text + afterInclude + "\n";
+            }
+            private string Tail(CIncludes.CInclude include)
+            {
+                if (include.Text == "") return "";
+                else return include.AppText;
+            }
+            public string GetHead(string cmd)
+            {
+                if (includes.IncludesContent.ContainsKey(cmd))
+                {
+                    return Head(Includes.IncludesContent[cmd]);
+                }
+                else return beforeInclude + cmd + afterInclude+"\n";
+            }
+            public string GetTail(string cmd)
+            {
+                if (includes.IncludesContent.ContainsKey(cmd))
+                {
+                    return Tail(Includes.IncludesContent[cmd]);
+                }
+                else return "";
+            }
+            private CIncludes includes = new CIncludes();
 
             public string BeforeInclude { get => beforeInclude; set => beforeInclude = value; }
             public string AfterInclude { get => afterInclude; set => afterInclude = value; }
-            private CIncludes Includes { get => includes; set => includes = value; }
+            public CIncludes Includes { get => includes; set => includes = value; }
         }
         private CImport import=new CImport();
         private string context;
@@ -89,6 +127,25 @@ namespace xyqlx
             language = langNode.SelectSingleNode(".//name/text()").Value;
             openStyle = node.SelectSingleNode(".//openStyle/text()").Value;
             suffix = langNode.SelectSingleNode(".//suffix/text()").Value;
+            foreach(XmlNode i in node.SelectNodes(".//import/includes/include"))
+            {
+                string callString="", textString="", asTextString="", appTextString="";
+                if (i.SelectSingleNode(".//call/text()") != null) callString = i.SelectSingleNode(".//call/text()").Value;
+                if (i.SelectSingleNode(".//text/text()") != null) textString = i.SelectSingleNode(".//text/text()").Value;
+                if (i.SelectSingleNode(".//asText/text()") != null) asTextString = i.SelectSingleNode(".//asText/text()").Value;
+                if (i.SelectSingleNode(".//appText/text()") != null) appTextString = i.SelectSingleNode(".//appText/text()").Value;
+                import.Includes.AddInclude(callString, textString, asTextString, appTextString);
+            }
+        }
+        //进行必要的转义
+        public string ReplaceAllSymbol(string toReplace,string orderStrVer="")
+        {
+            if (toReplace.IndexOf("%FILE%") != -1)
+                return toReplace.Replace("%FILE%", "C:\\code\\" + Language + "\\" + typeName + "\\" + callCommand + orderStrVer + "." + suffix);
+            else if (toReplace.IndexOf("%FILENAMENOEXTENSION%")!=-1)
+                return toReplace.Replace("%FILENAMENOEXTENSION%", callCommand + orderStrVer);
+            else
+                return toReplace;
         }
         public void createCodeFile(Dictionary<string,string> argsDict)
         {
@@ -149,6 +206,7 @@ namespace xyqlx
             {
                 string codeFilePath = defaultPath + "\\" + callCommand + orderStrVer + "." + suffix;
                 StreamWriter sw = new StreamWriter(codeFilePath, true);
+                //以下是打印注释
                 sw.Write(GetFirstLine());
                 sw.Write(GetBeforeLine());
                 sw.WriteLine("Filename    : " + CallCommand + orderStrVer + "." + suffix);
@@ -167,12 +225,16 @@ namespace xyqlx
                 sw.Write(GetBeforeLine());
                 sw.WriteLine("Source      : " + argsDict["s"]);
                 sw.Write(GetLastLine());
-
+                //这里是打印import
                 string includesString = argsDict["i"];
                 string[] includesStringArray = includesString.Split(';');
                 foreach(string i in includesStringArray)
                 {
-                    sw.WriteLine(GetBeforeInclude() + i + GetAfterInclude());
+                    sw.Write(import.GetHead(i));
+                }
+                foreach (string i in includesStringArray)
+                {
+                    sw.Write(ReplaceAllSymbol(import.GetTail(i),orderStrVer));
                 }
                 sw.Write(context);
                 sw.Close();
@@ -212,22 +274,18 @@ namespace xyqlx
             //打开代码文件
             if (argsDict.ContainsKey("o"))
             {
-                string realOpenStyle = openStyle;
-                int l = realOpenStyle.IndexOf("%FILE%");
-                if (l != -1)
-                {
-                    realOpenStyle = realOpenStyle.Replace("%FILE%", "C:\\code\\" + Language + "\\" + typeName + "\\" + callCommand + orderStrVer + "." + suffix);
-                }
-                //realOpenStyle = "notepad";
+                string realOpenStyle = ReplaceAllSymbol(openStyle,orderStrVer);
+                
                 Process myProcess = new Process();
                 myProcess.StartInfo.FileName = "cmd";
-                myProcess.StartInfo.UseShellExecute = false;
+                myProcess.StartInfo.UseShellExecute = false; ;
                 myProcess.StartInfo.RedirectStandardInput = true;
                 myProcess.StartInfo.RedirectStandardOutput = true;
                 myProcess.StartInfo.RedirectStandardError = true;
                 myProcess.StartInfo.CreateNoWindow = true;
                 myProcess.Start();
                 myProcess.StandardInput.WriteLine(realOpenStyle + "&exit");
+                //myProcess.StandardInput.WriteLine("exit");
                 myProcess.StandardInput.AutoFlush = true;
                 myProcess.WaitForExit();
                 myProcess.Close();
